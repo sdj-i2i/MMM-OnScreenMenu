@@ -17,6 +17,7 @@ Module.register("MMM-OnScreenMenu", {
             refresh: { title: "Refresh MagicMirror", icon: "refresh", source: "LOCAL" },
             reboot: { title: "Reboot", icon: "spinner", source: "ALL" },
             shutdown: { title: "Shutdown", icon: "power-off", source: "ALL" },
+            moduleToggle1: { title: "Hello World", icon: "info-circle", name: "helloworld" }
         },
         enableKeyboard: true,
 
@@ -43,8 +44,9 @@ Module.register("MMM-OnScreenMenu", {
     selectedMenuItem: '',
     actionTimers: {},
 
-    start: function() {
+    start: function () {
         console.log(this.name + " has started...");
+        // this.sendSocketNotification("GET_DASHBOARD_MODULES");
 
         this.sendSocketNotification("CONFIG", this.config);
 
@@ -65,7 +67,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    setupMousetrap: function() {
+    setupMousetrap: function () {
         Mousetrap.bind('up', () => this.selectMenuItem(-1));
         Mousetrap.bind('down', () => this.selectMenuItem());
         Mousetrap.bind('enter', () => this.doMenuActionCB());
@@ -77,30 +79,38 @@ Module.register("MMM-OnScreenMenu", {
         }, 'keyup');
     },
 
-    getScripts: function() {
+    getScripts: function () {
         return ['mousetrap.min.js'];
     },
 
-    getStyles: function() {
+    getStyles: function () {
         return [`${this.name}.css`, 'font-awesome.css'];
     },
 
-    getDom: function() {
+    getDom: function () {
         return this.createMenu();
     },
 
     // socketNotificationReceived from helper
-    socketNotificationReceived: function(notification, payload) {
+    socketNotificationReceived: function (notification, payload) {
         // console.log("Working notification system. Notification:", notification, "payload: ", payload);
-        if (notification === "RESTART") {
-            setTimeout(function() {
-                document.location.reload();
-                console.log('Delayed REFRESH');
-            }, 45000);
+        switch (notification) {
+            case 'GET_DASHBOARD_MODULES':
+                this.config.moduleData = payload ? payload.modules : {};
+                this.updateDom(this.config.animationSpeed);
+                break;
+            case 'RESTART':
+                setTimeout(function () {
+                    document.location.reload();
+                    console.log('Delayed REFRESH');
+                }, 45000);
+                break;
+            default:
+                break;
         }
     },
 
-    notificationReceived: function(notification, payload, sender) {
+    notificationReceived: function (notification, payload, sender) {
         if (this.config.enableKeyBindings) {
             if (this.validateKeyPress(notification, payload)) {
                 return;
@@ -132,7 +142,7 @@ Module.register("MMM-OnScreenMenu", {
     },
 
     /********** ON SCREEN MENU FUNCTIONS **********/
-    clickByNumber: function(itemNumber) {
+    clickByNumber: function (itemNumber) {
         if (!this.menuOpen) {
             // Correct menu must be opened first
             return;
@@ -145,7 +155,7 @@ Module.register("MMM-OnScreenMenu", {
         this.doMenuAction(k[itemNumber]);
     },
 
-    clearSelection: function() {
+    clearSelection: function () {
         var k = Object.keys(this.config.menuItems);
         k.forEach(s => {
             var item = document.getElementById(`osm${this.config.menuName}_${s}`);
@@ -154,7 +164,7 @@ Module.register("MMM-OnScreenMenu", {
         this.selectedMenuItem = '';
     },
 
-    toggleMenu: function(forceClose) {
+    toggleMenu: function (forceClose) {
         var menu = document.getElementById("osm" + this.config.menuName);
         // console.log(`Hovering: ${this.hovering}, Manual: ${this.manualOpen}, Open: ${this.menuOpen}, forceClose: ${forceClose}`);
         if (forceClose || this.manualOpen) {
@@ -174,7 +184,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    doMenuActionCB: function() {
+    doMenuActionCB: function () {
         if (this.selectedMenuItem) {
             this.doMenuAction(this.selectedMenuItem);
         } else {
@@ -182,7 +192,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    doMenuAction: function(action) {
+    doMenuAction: function (action) {
         var actionDetail = {};
         if (typeof action === "object") {
             actionDetail = action;
@@ -212,7 +222,7 @@ Module.register("MMM-OnScreenMenu", {
             this.changeMenuPosition(actionName.replace("changeMenuPosition_", ""));
         } else if (actionName.startsWith("delayed")) {
             if (!("actionName" in actionDetail)) {
-                actionDetail.actionName = actionName;  
+                actionDetail.actionName = actionName;
             }
             this.delayedAction(actionDetail);
         } else {
@@ -222,7 +232,7 @@ Module.register("MMM-OnScreenMenu", {
         this.toggleMenu(true);
     },
 
-    delayedAction: function (timer) {    
+    delayedAction: function (timer) {
         // Restart the timer
         if (timer.actionName in this.actionTimers) {
             clearTimeout(this.actionTimers[timer.actionName]);
@@ -233,7 +243,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    handleModuleAction: function(action) {
+    handleModuleAction: function (action) {
         var modules = MM.getModules().exceptModule(this).filter((m) => {
             if ("instance" in this.config.menuItems[action]) {
                 return (m.name === this.config.menuItems[action].name && m.data.config.instance === this.config.menuItems[action].instance);
@@ -257,7 +267,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    selectMenuItem: function(direction = 1) {
+    selectMenuItem: function (direction = 1) {
         if (!this.menuOpen) {
             return false;
         }
@@ -283,7 +293,7 @@ Module.register("MMM-OnScreenMenu", {
         });
     },
 
-    mouseenterCB: function() {
+    mouseenterCB: function () {
         this.hovering = true;
         this.menuOpen = true;
         if (this.config.enableKeyBindings &&
@@ -292,7 +302,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    mouseoutCB: function() {
+    mouseoutCB: function () {
         this.hovering = false;
         this.menuOpen = this.manualOpen;
         if (this.config.enableKeyBindings && !this.menuOpen &&
@@ -301,15 +311,15 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    createMenu: function() {
+    createMenu: function () {
         var self = this;
 
         // Check position is valid:
-        var positions = ['top_right', 'top_left', 'bottom_right', 'bottom_left'];
+        var positions = ['top_right', 'top_left', 'bottom_right', 'bottom_left', 'bottom_bar'];
         if (positions.indexOf(this.data.position) === -1) { this.data.position = 'top_right'; }
-
+        let isBottomDock = (this.data.position === 'bottom_bar');
         function makeOnClickHandler(a) {
-            return function() {
+            return function () {
                 self.doMenuAction(a);
             };
         }
@@ -327,13 +337,18 @@ Module.register("MMM-OnScreenMenu", {
         nav.onmouseenter = () => this.mouseenterCB();
         nav.onmouseout = () => this.mouseoutCB();
 
-        var fab = document.createElement("span");
-        fab.className = "osmButtons menu";
-        fab.setAttribute("tooltip", "Close");
-        fab.onclick = () => this.toggleMenu();
-        fab.innerHTML = `<i class="fa fa-bars closed" aria-hidden="true"></i>
-                         <i class="fa fa-times opened" aria-hidden="true"></i>`;
-
+        if (isBottomDock) {
+            nav.classList.add("bottom-dock");
+            div.classList.add("openMenu");
+        }
+        var fab = isBottomDock ? null : document.createElement("span");
+        if (!isBottomDock) {
+            fab.className = "osmButtons menu";
+            fab.setAttribute("tooltip", "Close");
+            fab.onclick = () => this.toggleMenu();
+            fab.innerHTML = `<i class="fa fa-bars closed" aria-hidden="true"></i>
+                             <i class="fa fa-times opened" aria-hidden="true"></i>`;
+        }
         if (this.data.position.startsWith("top")) {
             nav.appendChild(fab);
         }
@@ -342,14 +357,18 @@ Module.register("MMM-OnScreenMenu", {
             var span = document.createElement("span");
             span.id = "osm" + this.config.menuName + "_" + k;
             span.innerHTML = `<i class="fa fa-${this.config.menuItems[k].icon}" aria-hidden="true"></i>`;
-            span.className = "osmButtons item";
+            span.className = "osmButtons " + (isBottomDock ? "dock-item" : "item");
             span.setAttribute("tooltip", this.config.menuItems[k].title);
             span.onclick = makeOnClickHandler(k);
             nav.appendChild(span);
         });
 
         if (this.data.position.startsWith("bottom")) {
-            nav.appendChild(fab);
+            if (isBottomDock) {
+
+            } else {
+                nav.appendChild(fab);
+            }
         }
 
         div.appendChild(nav);
@@ -377,7 +396,7 @@ Module.register("MMM-OnScreenMenu", {
 
     /* Function to change position of the menu. 
      * Not used by default, just available from demo */
-    changeMenuPosition: function(newPosition) {
+    changeMenuPosition: function (newPosition) {
         var menu = document.getElementById("osm" + this.config.menuName);
         var nav = menu.children[0];
         menu.classList.toggle("top_left", newPosition === "top_left");
@@ -394,12 +413,12 @@ Module.register("MMM-OnScreenMenu", {
 
     /* Function to toggle "touchMode" of the button (always visible). 
      * Not used by default, just available from demo */
-    toggleTouchMode: function() {
+    toggleTouchMode: function () {
         var menu = document.getElementById("osm" + this.config.menuName);
         menu.classList.toggle("touchMode");
     },
 
-    setupKeyBindings: function() {
+    setupKeyBindings: function () {
         this.currentKeyPressMode = "DEFAULT";
         if (typeof this.config.kbMultiInstance === undefined) {
             this.config.kbMultiInstance = true;
@@ -412,7 +431,7 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    validateKeyPress: function(notification, payload) {
+    validateKeyPress: function (notification, payload) {
         // Handle KEYPRESS mode change events from the MMM-KeyBindings Module
         if (notification === "KEYPRESS_MODE_CHANGED") {
             this.currentKeyPressMode = payload;
@@ -459,7 +478,7 @@ Module.register("MMM-OnScreenMenu", {
         return false;
     },
 
-    validKeyPress: function(kp) {
+    validKeyPress: function (kp) {
         if (kp.KeyName === this.config.keyBindings.Up) {
             this.selectMenuItem(-1);
         } else if (kp.KeyName === this.config.keyBindings.Down) {
@@ -473,14 +492,14 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
-    keyPressFocusReceived: function(kp) {
+    keyPressFocusReceived: function (kp) {
         // console.log(this.name + "HAS FOCUS!");
         this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.keyBindingsMode);
         this.currentKeyPressMode = this.config.keyBindingsMode;
         if (!this.menuOpen) { this.toggleMenu(); }
     },
 
-    keyPressReleaseFocus: function() {
+    keyPressReleaseFocus: function () {
         // console.log(this.name + "HAS RELEASED FOCUS!");
         this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
         this.currentKeyPressMode = "DEFAULT";
