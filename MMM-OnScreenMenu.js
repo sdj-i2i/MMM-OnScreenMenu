@@ -7,17 +7,17 @@
  * MIT Licensed.
  */
 
+ /*
+ * font awesome link: https://fontawesome.com/icons?d=gallery&m=free
+ */
 Module.register("MMM-OnScreenMenu", {
     defaults: {
         touchMode: true,
         menuName: "MAIN",
         menuItems: {
-            monitorOff: { title: "Turn Off Monitor", icon: "television", source: "SERVER" },
-            restart: { title: "Restart MagicMirror", icon: "recycle", source: "ALL" },
-            refresh: { title: "Refresh MagicMirror", icon: "refresh", source: "LOCAL" },
-            reboot: { title: "Reboot", icon: "spinner", source: "ALL" },
-            shutdown: { title: "Shutdown", icon: "power-off", source: "ALL" },
-            moduleToggle1: { title: "Hello World", icon: "info-circle", name: "helloworld" }
+            moduleToggle1: { title: "Hello World", icon: "meh", name: "helloworld" },
+            moduleToggle2: { title: "Events", icon: "th-list", name: "events", visibility: "detached" },
+            moduleToggle3: { title: "Calendar", icon: "calendar-alt", name: "calendar" },
         },
         enableKeyboard: true,
 
@@ -267,6 +267,17 @@ Module.register("MMM-OnScreenMenu", {
         }
     },
 
+    hideOthers: function () {
+        var modules = MM.getModules().exceptModule(this).filter((m) => {
+            if ("instance" in this.config.menuItems[action]) {
+                return (m.name === this.config.menuItems[action].name && m.data.config.instance === this.config.menuItems[action].instance);
+            } else {
+                return m.name === this.config.menuItems[action].name;
+            }
+        }, this);
+
+    },
+
     selectMenuItem: function (direction = 1) {
         if (!this.menuOpen) {
             return false;
@@ -340,6 +351,7 @@ Module.register("MMM-OnScreenMenu", {
         if (isBottomDock) {
             nav.classList.add("bottom-dock");
             div.classList.add("openMenu");
+            div.classList.add("dock-container");
         }
         var fab = isBottomDock ? null : document.createElement("span");
         if (!isBottomDock) {

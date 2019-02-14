@@ -49,11 +49,11 @@
 
 /******************* FLOATING ACTION BUTTON *******************/
 
-.osmContainer {
+.osmContainer {display: flex;
     text-align: center;
-    position: fixed;
     cursor: pointer !important;
-    margin: 1em;
+    margin: 0;
+    width: 70%;
 }
 
 [class*="_left"] .osmContainer {
@@ -232,8 +232,9 @@
     right: 100%;
 }
 
-.bottom-dock {
-    display: inline;
+.dock-container {
+    display: flex;
+    justify-content: center;
 }
 
 .dock-item {
